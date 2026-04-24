@@ -5,7 +5,7 @@
 #include "shared_memory.h"
 #include "error.h"
 
-sharedData_t* shared_mem_init(args_t* args) {
+sharedData_t* shared_mem_init() {
   sharedData_t* memory = NULL;
   memory = mmap(NULL, sizeof(sharedData_t), PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
 
@@ -20,6 +20,7 @@ sharedData_t* shared_mem_init(args_t* args) {
   memory->boarding_cart_count = 0;
   memory->leaving_cart_count = 0;
 
+  memory->happy_customers_count = 0;
   memory->closing = false;
 
   return memory;

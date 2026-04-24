@@ -22,6 +22,7 @@ typedef struct {
   int leaving_cart_count;
   sem_t leaving_cart_queue;
 
+  unsigned happy_customers_count;
   bool closing;
 } sharedData_t;
 

@@ -20,3 +20,10 @@ void cart(unsigned id, args_t* args) {
   printf("V %d: closing\n", id);
   exit(EXIT_SUCCESS);
 }
+
+void visitor(unsigned id, args_t* args) {
+  printf("N %d: started\n", id);
+  printf("N %d: delay: %d\n", id, args->TN);
+  printf("N %d: leaving\n", id);
+  exit(EXIT_SUCCESS);
+}

@@ -119,11 +119,17 @@ int main(int argc, char** argv) {
   int pid = start_sub_process(&args, 0, dispatcher);
   pid_arr_add(&pid_arr, pid);
 
+  // Start carts
   for(int i = 1; i <= args.V; i++) {
     pid = start_sub_process(&args, i, cart);
     pid_arr_add(&pid_arr, pid);
   }
 
+  // Start visitors
+  for(int i = 1; i <= args.N; i++) {
+    pid = start_sub_process(&args, i, visitor);
+    pid_arr_add(&pid_arr, pid);
+  }
 
   wait_for_all_processes(&pid_arr);
   shared_mem_free(shared_mem);

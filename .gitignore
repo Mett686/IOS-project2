@@ -1,5 +1,6 @@
 .vscode
-.d
-.o
+*.d
+*.o
 proj2
 proj2.out
+
