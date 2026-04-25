@@ -1,8 +1,7 @@
+#ifndef MAIN_H
+#define MAIN_H
 
-
-
-#ifndef _ARGS_H_
-#define _ARGS_H_
+#include "shared_memory.h"
 
 // V: počet vozíků, 0<V<10
 // N: počet návštěvníků, 0<N<10000
@@ -18,5 +17,7 @@ typedef struct args {
   int TN; // Maximální doba, než návštěvník dojde do fronty v mikrosekundách, 0<=TN<=1000
   int O; // Minimální časový odstup vozíků v mikrosekundách, 0<O<=100
 } args_t;
+
+extern sharedData_t* shared_mem;
 
 #endif
