@@ -11,9 +11,6 @@
 
 #define ARG_COUNT 7 // Expectd number of arguments
 
-sharedData_t* shared_mem = NULL;
-static pid_t main_pid;
-
 // Array for tracking child processes
 typedef struct {
   unsigned count;
@@ -21,8 +18,15 @@ typedef struct {
   pid_t* pids;
 } pidArr_t;
 
+
+FILE* output_file; // Global for all functions and processes
+sharedData_t* shared_mem = NULL; // Global for all functions and processes
+static pid_t main_pid; // Global for exit functions
+pidArr_t pid_arr; // Global so it can be freed after main stack frame is cleared
+
+
 // Close file on end
-void main_close_file(int status, void* arg) {
+void close_file_wrapper(int status, void* arg) {
   (void)status;
   if(getpid() == main_pid) {
     fclose((FILE*)arg);
@@ -40,6 +44,7 @@ pidArr_t* pid_arr_init(pidArr_t* pid_arr, unsigned size) {
   return NULL;
 }
 
+// Free pidArr structure
 void pid_arr_free(int status, void* arg) {
   (void)status;
   if(getpid() == main_pid) {
@@ -58,22 +63,30 @@ void pid_arr_add(pidArr_t* pid_arr, pid_t pid) {
   }
 }
 
-void free_shared_memory(int status, void* arg) {
+void free_carts_arr_wrapper(int status, void* arg) {
   (void)status;
   if(getpid() == main_pid) {
-    shared_mem_free((sharedData_t*)arg);
+    shared_carts_free(arg);
+  }
+}
+
+
+void free_mem_wrapper(int status, void* arg) {
+  (void)status;
+  if(getpid() == main_pid) {
+    shared_mem_free(arg);
   }
 }
 
 // Start sub-process
-pid_t start_sub_process(args_t* args, unsigned id, FILE* file, void (*process_function)(unsigned id, args_t* args, FILE* file)) {
+pid_t start_sub_process(args_t* args, unsigned id, void (*process_function)(unsigned id, args_t* args)) {
   pid_t pid = fork();
   if(pid == -1) {
     error_exit("Failed to fork main!\n");
   } else if(pid) {
     return pid;
   } else {
-    process_function(id, args, file);
+    process_function(id, args);
     error_exit("Process function did not end process!\n");
   }
   return -1;
@@ -126,48 +139,52 @@ int main(int argc, char** argv) {
 
 
   // Open file
-  FILE* file = fopen("proj2.out", "w");
-  if(!file) {
+  output_file = fopen("proj2.out", "w");
+  if(!output_file) {
     error_exit("Failed to open output file!\n");
   }
-  setbuf(file, NULL); // Turn off write buffer, needed for multiple process write
-  on_exit(main_close_file, (void*)file); // close file on exit
+  setbuf(output_file, NULL); // Turn off write buffer, needed for multiple process write
+  on_exit(close_file_wrapper, (void*)output_file); // close file on exit
   
   // Initialize pid array
-  pid_t main_pid = getpid();
-  pidArr_t pid_arr;
+  main_pid = getpid();
   if(!pid_arr_init(&pid_arr, 1 + args.V + args.N)) {
     error_exit("Process ID array allocation failed!\n");
   }
   on_exit(pid_arr_free, &pid_arr);
+
   // Initialize shared memory
   if(!(shared_mem = shared_mem_map())) {
     error_exit("Failed to map shared memory.\n");
   }
-  on_exit(free_shared_memory, (void*)shared_mem);
+  on_exit(free_mem_wrapper, (void*)shared_mem);
   if(!shared_mem_init(shared_mem)) {
     error_exit("Failed to initialize shared memory!\n");
   }
 
-
-  printf("Main pid: %d\n", (int)main_pid);
-
-
+  // Initialize semaphore array for carts in shared mem
+  if(!shared_carts_map(shared_mem, args.V)) {
+    error_exit("Failed to map shared carts array!\n");
+  }
+  on_exit(free_carts_arr_wrapper, &shared_mem->carts_arr);
+  if(!shared_carts_init(&shared_mem->carts_arr)) {
+    error_exit("Failed to initialize cart array in shared memory!\n");
+  }
 
   on_exit(kill_all_children, (void*)&pid_arr);
   // Start dispatcher
-  int pid = start_sub_process(&args, 0, file, dispatcher);
+  int pid = start_sub_process(&args, 0, dispatcher);
   pid_arr_add(&pid_arr, pid);
 
   // Start carts
   for(int i = 1; i <= args.V; i++) {
-    pid = start_sub_process(&args, i, file, cart);
+    pid = start_sub_process(&args, i, cart);
     pid_arr_add(&pid_arr, pid);
   }
 
   // Start visitors
   for(int i = 1; i <= args.N; i++) {
-    pid = start_sub_process(&args, i, file, visitor);
+    pid = start_sub_process(&args, i, visitor);
     pid_arr_add(&pid_arr, pid);
   }
 
@@ -187,6 +204,5 @@ int main(int argc, char** argv) {
     }
   }
 
-  shared_mem_free(shared_mem);
   return(EXIT_SUCCESS);
 }

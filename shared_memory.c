@@ -5,17 +5,8 @@
 #include "main.h"
 #include "error.h"
 
-// Map shared memory
-sharedData_t* shared_mem_map() {
-  sharedData_t* memory = NULL;
-  memory = mmap(NULL, sizeof(sharedData_t), PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
-  if(memory == MAP_FAILED) {
-    return NULL;
-  }
 
-  return memory;
-}
-
+// Map array of cart semaphores
 cartsSemaphores_t* shared_carts_map(sharedData_t* memory, int count) {
   int* count_arr = mmap(NULL, sizeof(int)*count, PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
   if(count_arr == MAP_FAILED)
@@ -27,16 +18,45 @@ cartsSemaphores_t* shared_carts_map(sharedData_t* memory, int count) {
     return NULL;
   }
   memory->carts_arr.size = count;
-  memory->carts_arr.cart_count_arr = count_arr;
-  memory->carts_arr.cart_sem_arr = sem_arr;
+  memory->carts_arr.count_arr = count_arr;
+  memory->carts_arr.sem_arr = sem_arr;
   return &memory->carts_arr;
 }
 
-void shared_carts_free(cartsSemaphores_t* carts_arr) {
-  munmap(&carts_arr->cart_count_arr, sizeof(int)*carts_arr->size);
-  munmap(&carts_arr->cart_sem_arr, sizeof(sem_t)*carts_arr->size);
+// Initialize array of cart semaphores
+cartsSemaphores_t* shared_carts_init(cartsSemaphores_t* arr) {
+  for(int i = 0; i < arr->size; i++) {
+    // on fail destroy all previously initialized
+    if(sem_init(&arr->sem_arr[i], 1, 0) == -1) {
+      for(int j = 0; j < i; j++) {
+        sem_destroy(&arr->sem_arr[j]);
+      }
+      return NULL;
+    }
+    arr->count_arr[i] = 0;
+    arr->arr_idx = 0;
+  }
+  return arr;
 }
 
+// Free array of cart semaphores
+void shared_carts_free(cartsSemaphores_t* arr) {
+  for(int i = 0; i < arr->size; i++) {
+    sem_destroy(&arr->sem_arr[i]);
+  }
+  munmap(&arr->count_arr, sizeof(arr->count_arr[0])*arr->size);
+  munmap(&arr->sem_arr, sizeof(arr->sem_arr[0])*arr->size);
+}
+
+// Map shared memory
+sharedData_t* shared_mem_map() {
+  sharedData_t* memory = NULL;
+  memory = mmap(NULL, sizeof(sharedData_t), PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
+  if(memory == MAP_FAILED) {
+    return NULL;
+  }
+  return memory;
+}
 
 // Initialize shared memory, carefull unsafe write
 sharedData_t* shared_mem_init(sharedData_t* memory) {
@@ -66,6 +86,7 @@ sharedData_t* shared_mem_init(sharedData_t* memory) {
   return memory;
 }
 
+// Free shared memory
 void shared_mem_free(sharedData_t* memory) {
   sem_destroy(&memory->boarding_visitor_queue);
   sem_destroy(&memory->boarding_cart_queue);

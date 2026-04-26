@@ -1,6 +1,8 @@
 #ifndef MAIN_H
 #define MAIN_H
 
+#include <stdio.h>
+
 #include "shared_memory.h"
 
 // V: počet vozíků, 0<V<10
@@ -18,6 +20,7 @@ typedef struct args {
   int O; // Minimální časový odstup vozíků v mikrosekundách, 0<O<=100
 } args_t;
 
+extern FILE* output_file;
 extern sharedData_t* shared_mem;
 
 #endif

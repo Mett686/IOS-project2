@@ -10,8 +10,8 @@
 typedef struct {
   int size; // Size of array
   unsigned arr_idx; // Index to which semaphor in array should visitors start boarding
-  int* cart_count_arr; // Number of visitors in each cart 
-  sem_t* cart_sem_arr; // Carts semaphores
+  int* count_arr; // Number of visitors in each cart 
+  sem_t* sem_arr; // Carts semaphores
 } cartsSemaphores_t;
 
 
@@ -34,13 +34,22 @@ typedef struct {
   cartsSemaphores_t carts_arr;
 } sharedData_t;
 
-// map shared memory
+// Map array of cart semaphores
+cartsSemaphores_t* shared_carts_map(sharedData_t* memory, int count);
+
+// Initialize array of cart semaphores
+cartsSemaphores_t* shared_carts_init(cartsSemaphores_t* arr);
+
+// Free array of cart semaphores
+void shared_carts_free(cartsSemaphores_t* arr);
+
+// Map shared memory
 sharedData_t* shared_mem_map();
 
-// Initialize shared memory
-sharedData_t* shared_mem_init();
+// Initialize shared memory, carefull unsafe write
+sharedData_t* shared_mem_init(sharedData_t* memory);
 
-// free shared memory
+// Free shared memory
 void shared_mem_free(sharedData_t* memory);
 
 #endif
