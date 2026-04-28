@@ -28,9 +28,7 @@ pidArr_t pid_arr; // Global so it can be freed after main stack frame is cleared
 // Close file on end
 void close_file_wrapper(int status, void* arg) {
   (void)status;
-  if(getpid() == main_pid) {
-    fclose((FILE*)arg);
-  }
+  fclose((FILE*)arg);
 }
 
 // Initialize pidArr structure;
@@ -47,10 +45,9 @@ pidArr_t* pid_arr_init(pidArr_t* pid_arr, unsigned size) {
 // Free pidArr structure
 void pid_arr_free(int status, void* arg) {
   (void)status;
-  if(getpid() == main_pid) {
-    pidArr_t* arr_struct = (pidArr_t*)arg;
-    free(arr_struct->pids);
-  }
+  pidArr_t* pid_arr = arg;
+  free(pid_arr->pids);
+  pid_arr->size = 0;
 }
 
 // rework this shit

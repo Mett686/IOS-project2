@@ -70,9 +70,17 @@ sharedData_t* shared_mem_init(sharedData_t* memory) {
     if(sem_init(&memory->boarding_cart_queue, 1, 0) == -1) {
       return NULL;
     }
-    if(sem_init(&memory->leaving_cart_queue, 1, 0) == -1) {
+    if(sem_init(&memory->boarding_complete, 1, 0) == -1) {
       return NULL;
     }
+    if(sem_init(&memory->leaving_cart_queue, 1, 1) == -1) {
+      return NULL;
+    }
+    if(sem_init(&memory->leaving_complete, 1, 0) == -1) {
+      return NULL;
+    }
+
+
     memory->counter = 1;
 
     memory->boarding_visitor_count = 0;
@@ -88,8 +96,11 @@ sharedData_t* shared_mem_init(sharedData_t* memory) {
 
 // Free shared memory
 void shared_mem_free(sharedData_t* memory) {
+  sem_destroy(&memory->mutex);
   sem_destroy(&memory->boarding_visitor_queue);
   sem_destroy(&memory->boarding_cart_queue);
+  sem_destroy(&memory->boarding_complete);
   sem_destroy(&memory->leaving_cart_queue);
+  sem_destroy(&memory->leaving_complete);
   munmap(memory, sizeof(sharedData_t));
 }

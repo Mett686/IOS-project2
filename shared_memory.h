@@ -24,9 +24,11 @@ typedef struct {
 
   int boarding_cart_count; // Number of carts waiting for boarding
   sem_t boarding_cart_queue; // Semaphore for empty carts
+  sem_t boarding_complete;
 
   int leaving_cart_count; // Count of carts waiting to be emptied
   sem_t leaving_cart_queue; // Semaphore for carts waiting to be emptied
+  sem_t leaving_complete;
 
   int happy_customers_count; // Number of satisfied visitors
   bool closing; // Whether carts should start boarding or ending
