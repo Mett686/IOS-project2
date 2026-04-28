@@ -168,6 +168,7 @@ int main(int argc, char** argv) {
     error_exit("Failed to initialize cart array in shared memory!\n");
   }
 
+  // Start sub processes
   on_exit(kill_all_children, (void*)&pid_arr);
   // Start dispatcher
   int pid = start_sub_process(&args, 0, dispatcher);
@@ -184,8 +185,6 @@ int main(int argc, char** argv) {
     pid = start_sub_process(&args, i, visitor);
     pid_arr_add(&pid_arr, pid);
   }
-
-  printf("%d\n",shared_mem->counter);
 
   // Wait for all children to end
   int status;
