@@ -40,6 +40,11 @@ void dispatcher(unsigned id, args_t* args) {
   while(!shared_mem->closing) {
     sem_wait(mutex);
 
+    if(shared_mem->closing) {
+      sem_post(mutex);
+      break;
+    }
+
     if(shared_mem->visitor_queue_len == 0 &&
       shared_mem->happy_customers_count == args->N) {
       log_action("D: closing\n");
@@ -80,6 +85,7 @@ void cart(unsigned id, args_t* args) {
     
     sem_wait(boarding_carts);
     sem_wait(mutex);
+    if(shared_mem->closing) break;
     shared_mem->cart_count--;
     log_action("V %d: boarding started\n", id);
     carts->arr_idx = id-1;
@@ -142,13 +148,14 @@ void visitor(unsigned id, args_t* args) {
   cart_id = carts->arr_idx;
   carts->count_arr[cart_id]++;
   shared_mem->visitor_queue_len--;
+  shared_mem->happy_customers_count++;
 
     printf("shared_mem->visitor_queue_len: %d\n", shared_mem->visitor_queue_len);
     printf("shared_mem->happy_customers_count: %d\n", shared_mem->happy_customers_count);
     printf("visitors in cart: %d\n", carts->count_arr[cart_id]);
 
   if( carts->count_arr[cart_id] >= args->K ||
-      carts->count_arr[cart_id] == (args->N - shared_mem->happy_customers_count)) {
+      args->N == shared_mem->happy_customers_count) {
     if(carts->count_arr[cart_id] > args->K) {
       error_exit("Number of visitors in cart exceeded cart capacity.\n");
     }
@@ -163,7 +170,6 @@ void visitor(unsigned id, args_t* args) {
   sem_wait(mutex);
   log_action("N %d: leaving\n", id);
   carts->count_arr[cart_id]--;
-  shared_mem->happy_customers_count++;
   if(carts->count_arr[cart_id] == 0) {
     if(carts->count_arr[cart_id] < 0) {
       carts->count_arr[cart_id] = 0;
