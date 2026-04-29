@@ -15,6 +15,10 @@ proj2: main.o error.o sub_processes.o shared_memory.o
 run: proj2
 	./proj2 2 10 4 10 10 10
 
+test: run
+	./kontrola-vystupu.sh < proj2.out
+
+
 clean:
 	rm -f *.o *.d $(xlogin).zip
 
@@ -23,4 +27,4 @@ zip:
 
 -include *.d
 
-.PHONY: run clean zip
+.PHONY: run test clean zip

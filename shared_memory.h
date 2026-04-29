@@ -19,16 +19,14 @@ typedef struct {
   sem_t mutex; // Main mutex
   unsigned counter; // Action counter
 
-  int visitor_queue_len; // Number of visitors waiting in boarding queue
   sem_t visitor_queue; // Semaphore for boarding visitors
 
-  int cart_count; // Number of carts waiting for boarding
-  sem_t cart_storage; // Semaphore for empty carts
+  sem_t cart_queue; // Semaphore for empty carts
   sem_t boarding_complete;
   sem_t cart_left;
 
   sem_t leaving_cart_queue; // Semaphore for carts waiting to be emptied
-  sem_t leaving_complete;
+  sem_t visitors_left;
 
   int happy_customers_count; // Number of satisfied visitors
   bool closing; // Whether carts should start boarding or ending

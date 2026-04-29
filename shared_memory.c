@@ -67,7 +67,7 @@ sharedData_t* shared_mem_init(sharedData_t* memory) {
     if(sem_init(&memory->visitor_queue, 1, 0) == -1) {
       return NULL;
     }
-    if(sem_init(&memory->cart_storage, 1, 0) == -1) {
+    if(sem_init(&memory->cart_queue, 1, 0) == -1) {
       return NULL;
     }
     if(sem_init(&memory->boarding_complete, 1, 0) == -1) {
@@ -79,16 +79,11 @@ sharedData_t* shared_mem_init(sharedData_t* memory) {
     if(sem_init(&memory->leaving_cart_queue, 1, 1) == -1) {
       return NULL;
     }
-    if(sem_init(&memory->leaving_complete, 1, 0) == -1) {
+    if(sem_init(&memory->visitors_left, 1, 0) == -1) {
       return NULL;
     }
 
-
     memory->counter = 1;
-
-    memory->visitor_queue_len = 0;
-    
-    memory->cart_count = 0;
 
     memory->happy_customers_count = 0;
     memory->closing = false;
@@ -100,10 +95,10 @@ sharedData_t* shared_mem_init(sharedData_t* memory) {
 void shared_mem_free(sharedData_t* memory) {
   sem_destroy(&memory->mutex);
   sem_destroy(&memory->visitor_queue);
-  sem_destroy(&memory->cart_storage);
+  sem_destroy(&memory->cart_queue);
   sem_destroy(&memory->boarding_complete);
   sem_destroy(&memory->cart_left);
   sem_destroy(&memory->leaving_cart_queue);
-  sem_destroy(&memory->leaving_complete);
+  sem_destroy(&memory->visitors_left);
   munmap(memory, sizeof(sharedData_t));
 }
