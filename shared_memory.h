@@ -5,13 +5,18 @@
 
 #include <semaphore.h>
 #include <stdbool.h>
+#include <pthread.h>
 
 
 typedef struct {
   int size; // Size of array
   unsigned arr_idx; // Index to which semaphor in array should visitors start boarding
-  int* count_arr; // Number of visitors in each cart 
+  int* count_arr; // Number of visitors in each cart
   sem_t* sem_arr; // Carts semaphores
+
+  pthread_mutex_t mutex;
+  pthread_cond_t condition;
+  unsigned* order_arr;
 } cartsSemaphores_t;
 
 
@@ -22,10 +27,9 @@ typedef struct {
   sem_t visitor_queue; // Semaphore for boarding visitors
 
   sem_t cart_queue; // Semaphore for empty carts
-  sem_t boarding_complete;
+  sem_t boarding_complete; 
   sem_t cart_left;
 
-  sem_t leaving_cart_queue; // Semaphore for carts waiting to be emptied
   sem_t visitors_left;
 
   int happy_customers_count; // Number of satisfied visitors

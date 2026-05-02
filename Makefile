@@ -1,6 +1,7 @@
 CC = gcc
-CFLAGS = -std=gnu99 -Wall -Wextra -Werror -pedantic -MMD -MP -g
+CFLAGS = -std=gnu99 -Wall -Wextra -Werror -pedantic -MMD -MP -pthread
 LDLIBS =
+zipname = proj2
 
 all: proj2
 
@@ -20,10 +21,10 @@ test: run
 
 
 clean:
-	rm -f *.o *.d $(xlogin).zip
+	rm -f *.o *.d $(zipname).zip
 
 zip:
-	zip $(xlogin).zip *.c *.h Makefile
+	zip $(zipname).zip *.c *.h Makefile
 
 -include *.d
 

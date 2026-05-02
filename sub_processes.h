@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "error.h"
 #include "main.h"

@@ -1,6 +1,6 @@
 .vscode
 *.d
 *.o
+*.zip
 proj2
 proj2.out
-

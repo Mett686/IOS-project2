@@ -18,11 +18,11 @@ typedef struct {
   pid_t* pids;
 } pidArr_t;
 
-
-FILE* output_file; // Global for all functions and processes
-sharedData_t* shared_mem = NULL; // Global for all functions and processes
-static pid_t main_pid; // Global for exit functions
-pidArr_t pid_arr; // Global so it can be freed after main stack frame is cleared
+// Globals:
+FILE* output_file; // File to log into
+sharedData_t* shared_mem = NULL;
+static pid_t main_pid; // For on_exit logic
+pidArr_t pid_arr; // Needs to be available for on_exit after main stack frame is destroyed
 
 
 // Close file on end
@@ -50,7 +50,7 @@ void pid_arr_free(int status, void* arg) {
   pid_arr->size = 0;
 }
 
-// rework this shit
+// Add pid to pid_arr
 void pid_arr_add(pidArr_t* pid_arr, pid_t pid) {
   if(pid_arr->count < pid_arr->size) {
     pid_arr->pids[pid_arr->count] = pid;
@@ -60,6 +60,7 @@ void pid_arr_add(pidArr_t* pid_arr, pid_t pid) {
   }
 }
 
+// Free memory mapped for carts_arr in shared mem
 void free_carts_arr_wrapper(int status, void* arg) {
   (void)status;
   if(getpid() == main_pid) {
@@ -67,7 +68,7 @@ void free_carts_arr_wrapper(int status, void* arg) {
   }
 }
 
-
+// Free shared memory
 void free_mem_wrapper(int status, void* arg) {
   (void)status;
   if(getpid() == main_pid) {
@@ -89,6 +90,7 @@ pid_t start_sub_process(args_t* args, unsigned id, void (*process_function)(unsi
   return -1;
 }
 
+// Kill all subprocesses on failure
 void kill_all_children(int status, void* arg) {
   if(status == EXIT_FAILURE && getpid() == main_pid) {
     pidArr_t* pid_arr = arg;
@@ -98,6 +100,7 @@ void kill_all_children(int status, void* arg) {
   }
 }
 
+// Cherge range of argument and strtol it
 int get_arg(const char *str, int idx, int low, int high) {
   char *endptr;
   long val = strtol(str, &endptr, 10);
@@ -141,7 +144,7 @@ int main(int argc, char** argv) {
     error_exit("Failed to open output file!\n");
   }
   setbuf(output_file, NULL); // Turn off write buffer, needed for multiple process write
-  on_exit(close_file_wrapper, (void*)output_file); // close file on exit
+  on_exit(close_file_wrapper, (void*)output_file);
   
   // Initialize pid array
   main_pid = getpid();
