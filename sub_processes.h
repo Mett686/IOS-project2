@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "error.h"
 #include "main.h"
