@@ -35,7 +35,7 @@ void append(unsigned* arr, unsigned id) {
 
 // Removes first id from the array and moves all one forward
 void pop_first(unsigned* arr) {
-  for(int i = 0; arr[i+1]; i++) {
+  for(int i = 0; arr[i]; i++) {
     arr[i] = arr[i+1];
   }
 }
@@ -91,7 +91,8 @@ void cart(unsigned id, args_t* args) {
   log_action("V %d: started\n", id);
 
   while(!mem->closing) {
-    sem_post(mutex);
+    sem_post(mutex); // posting and waiting on begining of cycle
+                     // so that reading of mem->closing is protected 
 
     // Wait for your turn
     sem_wait(&mem->cart_queue);
@@ -112,32 +113,27 @@ void cart(unsigned id, args_t* args) {
 
     sem_wait(&mem->boarding_complete);
     sem_wait(mutex);
-    log_action("V %d: boarding complete\n", id);
-    sem_post(mutex);
-
-    
-    // Track section
-    // Track the order in which carts go on the track
-    pthread_mutex_lock(&carts->mutex);
     append(carts->order_arr, id);
-    pthread_mutex_unlock(&carts->mutex);
+    log_action("V %d: boarding complete\n", id);
     sem_post(&mem->cart_left);
+    sem_post(mutex);
 
     sleep_random(args->TV/2, args->TV);
 
-
-    // Leaving / disembarking section
-    // Pthread conditional wait for your turn to leave
-    // using pthread functions here and different mutex
-    pthread_mutex_lock(&carts->mutex);
-    while(carts->order_arr[0] != id) {
-      pthread_cond_wait(&carts->condition, &carts->mutex);
-    }
-    pop_first(carts->order_arr);
-    pthread_cond_broadcast(&carts->condition);
-    
-
     sem_wait(mutex);
+    bool waited = false;
+    if(carts->order_arr[0] != id) {
+      waited = true;
+      carts->on_track_count ++;
+      sem_post(mutex);
+      sem_wait(&carts->on_track[id-1]);
+    } else {
+      sem_post(mutex);
+    }
+
+    sem_wait(&mem->leaving_station);
+    sem_wait(mutex);
+    if(waited) carts->on_track_count--;
     log_action("V %d: leaving started\n", id);
     for(int i = 0; i < carts->count_arr[id-1]; i++) {
       sem_post(&carts->sem_arr[id-1]);
@@ -145,9 +141,13 @@ void cart(unsigned id, args_t* args) {
     sem_post(mutex);
     
     sem_wait(&mem->visitors_left);
-    sem_wait(mutex); // post for this mutex is either at the beginnig of (or after this) while loop
+    sem_wait(mutex); // post for this mutex is either at the (beginnig of / after) this while loop
+    pop_first(carts->order_arr);
+    if(carts->on_track_count) {
+      sem_post(&carts->on_track[carts->order_arr[0]-1]);
+    }
+    sem_post(&mem->leaving_station);
     log_action("V %d: leaving complete\n", id);
-    pthread_mutex_unlock(&carts->mutex); // this keeps the leaving station locked for current cart only 
   }
 
   log_action("V %d: closed\n", id);

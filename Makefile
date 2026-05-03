@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -std=gnu99 -Wall -Wextra -Werror -pedantic -MMD -MP -pthread
+CFLAGS = -std=gnu99 -Wall -Wextra -Werror -pedantic -MMD -MP
 LDLIBS =
 zipname = proj2
 
