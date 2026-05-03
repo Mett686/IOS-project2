@@ -1,3 +1,7 @@
+// main.c
+// Autor: Martin Knotek, FIT 3.5.2026
+// Přeloženo: gcc version 15.2.1 20260123 (Red Hat 15.2.1-7) (GCC)
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>

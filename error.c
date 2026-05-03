@@ -1,4 +1,5 @@
 // error.c
+// Řešení IJC-DU1, příklad b), 25.3.2026
 // Autor: Martin Knotek, FIT
 // Přeloženo: gcc version 15.2.1 20260123 (Red Hat 15.2.1-7) (GCC)
 
