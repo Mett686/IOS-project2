@@ -20,13 +20,13 @@ cartsSemaphores_t* shared_carts_map(sharedData_t* memory, int count) {
   }
 
   unsigned* order_arr = mmap(NULL, sizeof(int)*(count+1), PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
-  if(count_arr == MAP_FAILED) {
+  if(order_arr == MAP_FAILED) {
     munmap(count_arr, sizeof(int)*count);
     munmap(sem_arr, sizeof(sem_t)*count);
     return NULL;
   }
   sem_t* on_track = mmap(NULL, sizeof(sem_t)*count, PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
-  if(sem_arr == MAP_FAILED) {
+  if(on_track == MAP_FAILED) {
     munmap(count_arr, sizeof(int)*count);
     munmap(sem_arr, sizeof(sem_t)*count);
     munmap(order_arr, sizeof(unsigned)*(count + 1));
@@ -66,10 +66,10 @@ void shared_carts_free(cartsSemaphores_t* arr) {
     sem_destroy(&arr->sem_arr[i]);
     sem_destroy(&arr->on_track[i]);
   }
-  munmap(&arr->count_arr, sizeof(arr->count_arr[0])*arr->size);
-  munmap(&arr->sem_arr, sizeof(arr->sem_arr[0])*arr->size);
-  munmap(&arr->order_arr, sizeof(arr->order_arr[0])*arr->size);
-  munmap(&arr->on_track, sizeof(arr->order_arr[0])*arr->size);
+  munmap(arr->count_arr, sizeof(arr->count_arr[0])*arr->size);
+  munmap(arr->sem_arr, sizeof(arr->sem_arr[0])*arr->size);
+  munmap(arr->order_arr, sizeof(arr->order_arr[0])*(arr->size+1));
+  munmap(arr->on_track, sizeof(arr->on_track[0])*arr->size);
 }
 
 // Map shared memory
@@ -109,7 +109,7 @@ sharedData_t* shared_mem_init(sharedData_t* memory) {
 
     memory->counter = 1;
 
-    memory->happy_customers_count = 0;
+    memory->visitors_to_board = 0;
     memory->closing = false;
   }
   return memory;

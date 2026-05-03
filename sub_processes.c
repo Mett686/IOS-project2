@@ -17,12 +17,10 @@ void sleep_random(int min, int max) {
     warning("sleep_random received min greater than max!\n");
     return;
   }
-
   int delay = min;
   if (max > delay) {
     delay += min + (rand() % (max-min+1));
   }
-
   usleep((useconds_t)delay);
 }
 
@@ -48,6 +46,7 @@ void dispatcher(unsigned id, args_t* args) {
 
   sem_wait(mutex);
   log_action("D: started\n");
+  mem->visitors_to_board = args->N;
   sem_post(mutex);
 
   // Reading outside of crittical function,
@@ -57,7 +56,7 @@ void dispatcher(unsigned id, args_t* args) {
     sem_wait(mutex);
 
     // If all visitors entered a cart start closing
-    if(mem->happy_customers_count == args->N) {
+    if(!mem->visitors_to_board) {
       log_action("D: closing\n");
       mem->closing = true;
       for(int i = 0; i < args->V; i++) {
@@ -106,7 +105,8 @@ void cart(unsigned id, args_t* args) {
     // Boarding section
     log_action("V %d: boarding started\n", id);
     carts->arr_idx = id-1;
-    for(int i = 0; i < args->K; i++) {
+    int capacity = (mem->visitors_to_board > args->K) ? args->K : mem->visitors_to_board;
+    for(int i = 0; i < capacity; i++) {
       sem_post(&mem->visitor_queue);
     }
     sem_post(mutex);
@@ -120,6 +120,7 @@ void cart(unsigned id, args_t* args) {
 
     sleep_random(args->TV/2, args->TV);
 
+    // This section ensures correct order
     sem_wait(mutex);
     bool waited = false;
     if(carts->order_arr[0] != id) {
@@ -131,6 +132,8 @@ void cart(unsigned id, args_t* args) {
       sem_post(mutex);
     }
 
+
+    // Leaving section
     sem_wait(&mem->leaving_station);
     sem_wait(mutex);
     if(waited) carts->on_track_count--;
@@ -174,17 +177,16 @@ void visitor(unsigned id, args_t* args) {
 
   // Board cart and save its id
   // see cartsSemaphores_t in shared_memory.h
-  int cart_id;
   sem_wait(&mem->visitor_queue);
+  int cart_id;
   sem_wait(mutex);
   log_action("N %d: boarding\n", id);
   cart_id = carts->arr_idx;
   carts->count_arr[cart_id]++;
-  mem->happy_customers_count++;
+  mem->visitors_to_board--;
 
   // check if visitor was last to fit or last today
-  if( carts->count_arr[cart_id] == args->K || 
-      mem->happy_customers_count == args->N ) {
+  if( carts->count_arr[cart_id] == args->K || !mem->visitors_to_board ) {
     sem_post(&mem->boarding_complete);
   }
   sem_post(mutex);

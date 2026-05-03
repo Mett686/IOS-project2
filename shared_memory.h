@@ -28,11 +28,11 @@ typedef struct {
   sem_t boarding_complete; 
   sem_t cart_left;
 
-  sem_t leaving_station;
+  sem_t leaving_station; // Semaphore for leaving
 
-  sem_t visitors_left;
+  sem_t visitors_left; // Signal that all visitors disembarked
 
-  int happy_customers_count; // Number of satisfied visitors
+  int visitors_to_board; // Number of visitors left to board
   bool closing; // Whether carts should start boarding or ending
   cartsSemaphores_t carts_arr;
 
