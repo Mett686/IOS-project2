@@ -21,7 +21,7 @@ test: run
 
 
 clean:
-	rm -f *.o *.d $(zipname).zip
+	rm -f *.o *.d $(zipname).zip proj2 proj2.out
 
 zip:
 	zip $(zipname).zip *.c *.h Makefile
